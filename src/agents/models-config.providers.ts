@@ -456,6 +456,8 @@ export function buildQianfanProvider(): ProviderConfig {
 
 export async function resolveImplicitProviders(params: {
   agentDir: string;
+  config?: OpenClawConfig;
+  env?: NodeJS.ProcessEnv;
 }): Promise<ModelsConfig["providers"]> {
   const providers: Record<string, ProviderConfig> = {};
   const authStore = ensureAuthProfileStore(params.agentDir, {
@@ -564,6 +566,15 @@ export async function resolveImplicitProviders(params: {
     resolveApiKeyFromProfiles({ provider: "qianfan", store: authStore });
   if (qianfanKey) {
     providers.qianfan = { ...buildQianfanProvider(), apiKey: qianfanKey };
+  }
+
+  const implicitBedrock = await resolveImplicitBedrockProvider({
+    agentDir: params.agentDir,
+    config: params.config,
+    env: params.env,
+  });
+  if (implicitBedrock && !providers["amazon-bedrock"]) {
+    providers["amazon-bedrock"] = implicitBedrock;
   }
 
   return providers;

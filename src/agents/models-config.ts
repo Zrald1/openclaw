@@ -6,7 +6,6 @@ import { resolveOpenClawAgentDir } from "./agent-paths.js";
 import {
   normalizeProviders,
   type ProviderConfig,
-  resolveImplicitBedrockProvider,
   resolveImplicitCopilotProvider,
   resolveImplicitProviders,
 } from "./models-config.providers.js";
@@ -22,6 +21,7 @@ function mergeProviderModels(implicit: ProviderConfig, explicit: ProviderConfig)
     return { ...implicit, ...explicit };
   }
 
+  
   const getId = (model: unknown): string => {
     if (!model || typeof model !== "object") {
       return "";
@@ -86,18 +86,11 @@ export async function ensureOpenClawModelsJson(
   const agentDir = agentDirOverride?.trim() ? agentDirOverride.trim() : resolveOpenClawAgentDir();
 
   const explicitProviders = cfg.models?.providers ?? {};
-  const implicitProviders = await resolveImplicitProviders({ agentDir });
+  const implicitProviders = await resolveImplicitProviders({ agentDir, config: cfg });
   const providers: Record<string, ProviderConfig> = mergeProviders({
     implicit: implicitProviders,
     explicit: explicitProviders,
   });
-  const implicitBedrock = await resolveImplicitBedrockProvider({ agentDir, config: cfg });
-  if (implicitBedrock) {
-    const existing = providers["amazon-bedrock"];
-    providers["amazon-bedrock"] = existing
-      ? mergeProviderModels(implicitBedrock, existing)
-      : implicitBedrock;
-  }
   const implicitCopilot = await resolveImplicitCopilotProvider({ agentDir });
   if (implicitCopilot && !providers["github-copilot"]) {
     providers["github-copilot"] = implicitCopilot;
